@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>盲盒定价建模</title>
+<style>
+:root{--bg:#fafaf8;--card:#fff;--fg:#1c1c1a;--mut:#6b6b66;--line:#e2e2dc;--hot:#d9480f;--cold:#1c7ed6;--acc:#2f9e44;--warn:#c92a2a}
+@media(prefers-color-scheme:dark){:root{--bg:#161615;--card:#1f1f1d;--fg:#ececE8;--mut:#9a9a93;--line:#34342f;--hot:#ff8c5a;--cold:#74b0f0;--acc:#69db7c;--warn:#ff8787}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"PingFang SC","Noto Sans SC",sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:0 0 4px}
+.sub{color:var(--mut);margin:0 0 20px}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:20px 0}
+.note{color:var(--mut);font-size:13px}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px 20px;margin:12px 0}
+.ctl label{display:block;font-size:13px;color:var(--mut)}
+.ctl label b{color:var(--fg);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%}
+svg{width:100%;height:auto;display:block;overflow:visible}
+svg text{fill:var(--mut);font-size:11px;font-family:inherit}
+.kpi{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.kpi div{flex:1 1 130px;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kpi small{display:block;color:var(--mut);font-size:12px}.kpi span{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mut);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer}
+</style>
+</head>
+<body>
+<main>
+<h1>盲盒定价建模</h1>
+<p class="sub">热销款为什么定 142?拖动参数,看模型怎么回答。对应 <code>memory/plan.md</code> 的四段推理。</p>
+
+<!-- 1 -->
+<section>
+<h2>① 定价自洽:确认款期望价值 vs 盲盒价</h2>
+<p class="note">6 个常规款 + 1 个隐藏款(335)。盲盒售价 108。</p>
+<div class="ctl">
+<label>隐藏款概率 1/N,N = <b id="nV">72</b><input id="n" type="range" min="12" max="200" value="72"></label>
+<label>盲盒售价 = <b id="bpV">108</b><input id="bp" type="range" min="60" max="160" value="108"></label>
+</div>
+<svg id="c1" viewBox="0 0 760 220"></svg>
+<div class="kpi" id="k1"></div>
+<p class="note" id="t1"></p>
+</section>
+
+<!-- 2 -->
+<section>
+<h2>② 反推价格敏感度:收入最大化 P* = 1/b</h2>
+<p class="note">需求 D = a·e<sup>−bP</sup>,收入 R = P·D,在 P = 1/b 处取最大。观测价格 → 隐含 b。曲线已归一化到峰值 = 1。</p>
+<div class="ctl">
+<label>热款观测价 <b id="phV">142</b><input id="ph" type="range" min="60" max="250" value="142"></label>
+<label>冷款观测价 <b id="pcV">86</b><input id="pc" type="range" min="40" max="250" value="86"></label>
+</div>
+<svg id="c2" viewBox="0 0 760 260"></svg>
+<div class="legend"><span><i style="background:var(--hot)"></i>热款</span><span><i style="background:var(--cold)"></i>冷款</span></div>
+<div class="kpi" id="k2"></div>
+<p class="note">前提:商家定价是最优的,且卖得出去。冷款买家对价格更敏感,热款粉丝愿意多付。</p>
+</section>
+
+<!-- 3 -->
+<section>
+<h2>③ 多项 Logit:份额与最优加价</h2>
+<p class="note">sᵢ ∝ exp(αᵢ − β·Pᵢ),最优加价 Pᵢ − c = 1/(β(1−sᵢ))。下面的销量是<b>示意值</b>,请换成真实 SKU 销量。α 由销量和现价反推,再迭代求理论最优价,与现价对比。</p>
+<div class="ctl">
+<label>β(价格敏感度)<b id="bV">0.020</b><input id="b" type="range" min="0.008" max="0.05" step="0.001" value="0.02"></label>
+<label>单位成本/残值 c = <b id="cV">60</b><input id="c" type="range" min="0" max="110" value="60"></label>
+<label>外部选项份额 s₀ = <b id="s0V">50%</b><input id="s0" type="range" min="10" max="90" value="50"></label>
+</div>
+<table id="t3"></table>
+<svg id="c3" viewBox="0 0 760 220" style="margin-top:12px"></svg>
+<div class="legend"><span><i style="background:var(--mut)"></i>现价</span><span><i style="background:var(--acc)"></i>模型最优价</span></div>
+<p class="note">理论价 &gt; 现价 → 还有提价空间(库存约束/清仓价假设);理论价 &lt; 现价 → 现价偏高。这里按每款独立 FOC 迭代;严格的多品类垄断在 logit 下是统一加价,可视作上界对照。</p>
+</section>
+
+<!-- 4 -->
+<section>
+<h2>④ 动态库存:热款涨价、冷款缓降</h2>
+<p class="note">每天重新计算:剩余 Q 件、T 天,价格取 P = ln(aT/Q)/b(刚好在周期内卖完):库存紧(Q &lt; T·a/e)→ 高于 1/b 且随库存减少上升;积压 → 低于 1/b 并逐步下调,不低于残值。2 个热款 + 4 个冷款,整合套装需要 6 款都有货。</p>
+<div class="ctl">
+<label>热款日需求基数 a<b id="ahV">6</b><input id="ah" type="range" min="1" max="20" value="6"></label>
+<label>冷款日需求基数 a<b id="acV">3</b><input id="ac" type="range" min="1" max="20" value="3"></label>
+<label>热款初始库存<b id="qhV">100</b><input id="qh" type="range" min="10" max="200" value="100"></label>
+<label>冷款初始库存<b id="qcV">70</b><input id="qc" type="range" min="10" max="300" value="70"></label>
+<label>销售周期 T(天)<b id="TV">60</b><input id="T" type="range" min="14" max="120" value="60"></label>
+<label>价格下限(残值)<b id="flV">40</b><input id="fl" type="range" min="0" max="80" value="40"></label>
+</div>
+<div style="display:flex;gap:8px;align-items:center"><button id="re">重新随机</button><label class="note"><input id="noise" type="checkbox" checked> 泊松噪声</label></div>
+<svg id="c4" viewBox="0 0 760 240"></svg>
+<svg id="c5" viewBox="0 0 760 200"></svg>
+<div class="legend"><span><i style="background:var(--hot)"></i>热款(价/库存)</span><span><i style="background:var(--cold)"></i>冷款(价/库存)</span></div>
+<div class="kpi" id="k4"></div>
+<p class="note">热/冷款的 b 取 1/142 与 1/86(来自②)。热款库存见底 → 价格上冲;热款先卖光 → 套装下架,冷款只能单卖,继续缓降。上游决策(是否继续拆盒)取决于下一盒期望边际收入是否大于 108。</p>
+</section>
+<!-- 5 -->
+<section>
+<h2>⑤ 反推商家利润:拿货折扣 → 各渠道每盒利润</h2>
+<p class="note">官方价 129/盒(整套 774),卖家单盒售价 108,隐藏款 335,概率 1/72。成本 c = 129 × 拿货折扣。每盒利润 = 收入×(1−平台费) − 运费 − c。</p>
+<div class="ctl">
+<label>拿货折扣 <b id="dV">75%</b><input id="d" type="range" min="50" max="100" value="75"></label>
+<label>平台费率 <b id="feV">1.0%</b><input id="fe" type="range" min="0" max="8" step="0.1" value="1"></label>
+<label>运费(元/单)<b id="shV">4</b><input id="sh" type="range" min="0" max="12" step="0.5" value="4"></label>
+<label>冷款售出率 <b id="stV">85%</b><input id="st" type="range" min="30" max="100" value="85"></label>
+<label>未售出残值(占标价)<b id="rsV">50%</b><input id="rs" type="range" min="0" max="100" value="50"></label>
+</div>
+<svg id="c6" viewBox="0 0 760 240"></svg>
+<div class="kpi" id="k6"></div>
+<p class="note">盈亏平衡折扣:拆盒确认款与折扣、冷款售出率共同决定;卖盲盒 108 的平衡点 = (108×(1−费率)−运费)/129。冷款售出率低于 100% 时,拆盒卖确认款比直接卖盲盒更吃亏,这是"减少拆盒"决策的来源。</p>
+</section>
+<p class="note">仅为教学性建模,销量、成本等为示意参数。</p>
+</main>
+<script>
+const $=id=>document.getElementById(id), css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS='http://www.w3.org/2000/svg';
+const f=(x,d=0)=>x.toFixed(d);
+function chart(svg,W,H,o){ // o:{xmax,ymax,ymin,series:[{pts,color,dash,w}],bars,xlab,ylab,xticks,yticks,vlines}
+  const m={l:44,r:12,t:10,b:26}, pw=W-m.l-m.r, ph=H-m.t-m.b, ymin=o.ymin||0;
+  const X=x=>m.l+x/o.xmax*pw, Y=y=>m.t+ph-(y-ymin)/(o.ymax-ymin)*ph;
+  let s='';
+  for(let i=0;i<=4;i++){const y=ymin+(o.ymax-ymin)*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(y)}" y2="${Y(y)}" stroke="${css('--line')}"/><text x="${m.l-6}" y="${Y(y)+4}" text-anchor="end">${f(y,o.yd||0)}</text>`}
+  for(let i=0;i<=5;i++){const x=o.xmax*i/5;s+=`<text x="${X(x)}" y="${H-8}" text-anchor="middle">${f(x,o.xd||0)}</text>`}
+  (o.vlines||[]).forEach(v=>{s+=`<line x1="${X(v.x)}" x2="${X(v.x)}" y1="${m.t}" y2="${m.t+ph}" stroke="${v.color}" stroke-dasharray="4 3"/><text x="${X(v.x)+4}" y="${m.t+10}" fill="${v.color}" style="fill:${v.color}">${v.label||''}</text>`});
+  (o.hlines||[]).forEach(v=>{s+=`<line y1="${Y(v.y)}" y2="${Y(v.y)}" x1="${m.l}" x2="${W-m.r}" stroke="${v.color}" stroke-dasharray="4 3"/><text x="${W-m.r}" y="${Y(v.y)-4}" text-anchor="end" style="fill:${v.color}">${v.label||''}</text>`});
+  o.series.forEach(se=>{s+=`<polyline fill="none" stroke="${se.color}" stroke-width="${se.w||2}" ${se.dash?'stroke-dasharray="5 4"':''} points="${se.pts.map(p=>X(p[0])+','+Y(p[1])).join(' ')}"/>`});
+  svg.innerHTML=s;
+}
+function bars(svg,W,H,groups,ymax,hl){ // groups:[{label,vals:[{v,color}]}]
+  const m={l:44,r:12,t:12,b:30},pw=W-m.l-m.r,ph=H-m.t-m.b,Y=y=>m.t+ph-y/ymax*ph;let s='';
+  for(let i=0;i<=4;i++){const y=ymax*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(y)}" y2="${Y(y)}" stroke="${css('--line')}"/><text x="${m.l-6}" y="${Y(y)+4}" text-anchor="end">${f(y)}</text>`}
+  const gw=pw/groups.length;
+  groups.forEach((g,i)=>{const bw=Math.min(36,gw*0.8/g.vals.length);g.vals.forEach((b,j)=>{const x=m.l+i*gw+gw/2-bw*g.vals.length/2+j*bw;s+=`<rect x="${x}" y="${Y(b.v)}" width="${bw-2}" height="${Math.max(0,Y(0)-Y(b.v))}" fill="${b.color}" rx="2"/><text x="${x+bw/2-1}" y="${Y(b.v)-3}" text-anchor="middle">${f(b.v)}</text>`});
+    s+=`<text x="${m.l+i*gw+gw/2}" y="${H-10}" text-anchor="middle">${g.label}</text>`});
+  (hl||[]).forEach(v=>{s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v.y)}" y2="${Y(v.y)}" stroke="${v.color}" stroke-dasharray="4 3"/><text x="${W-m.r}" y="${Y(v.y)-4}" text-anchor="end" style="fill:${v.color}">${v.label}</text>`});
+  svg.innerHTML=s;
+}
+const names=['胡迪','小米','款3','款4','款5','款6'];
+const prices=[142,136,88,89,84,84], HID=335;
+const kpi=(el,a)=>el.innerHTML=a.map(([k,v])=>`<div><small>${k}</small><span>${v}</span></div>`).join('');
+
+/* 1 */
+function s1(){
+  const N=+$('n').value,bp=+$('bp').value,p=1/N;$('nV').textContent=N;$('bpV').textContent=bp;
+  const sum=prices.reduce((a,b)=>a+b,0),mean=sum/6,ev=(1-p)*mean+p*HID,hidV=6*p*HID;
+  bars($('c1'),760,220,prices.map((v,i)=>({label:names[i],vals:[{v,color:i<2?css('--hot'):css('--cold')}]})).concat([{label:'隐藏款',vals:[{v:HID,color:css('--acc')}]}]),360,[{y:bp,color:css('--warn'),label:'盲盒价 '+bp}]);
+  kpi($('k1'),[['常规款均价',f(mean,1)],['盲盒期望价值',f(ev,1)],['EV − 盲盒价',f(ev-bp,1)],['整合不拆封缺口',f(732-sum-hidV,0)]]);
+  $('t1').textContent=`6 款合计 ${sum},整合确认款 618(折扣仅 ${sum-618});6 个盲盒 ${6*bp}。732 比确认款整套贵 114,其中隐藏款机会价值约 6×335/${N} = ${f(hidV,0)},剩余 ${f(114-hidV,0)} 是原封/大盒/开盒体验溢价。`;
+}
+/* 2 */
+function s2(){
+  const ph=+$('ph').value,pc=+$('pc').value;$('phV').textContent=ph;$('pcV').textContent=pc;
+  const curve=(P0)=>{const b=1/P0,pts=[];for(let P=0;P<=300;P+=4)pts.push([P,P*Math.exp(-b*P)/(P0*Math.exp(-1))]);return pts};
+  chart($('c2'),760,260,{xmax:300,ymax:1.1,yd:1,series:[{pts:curve(ph),color:css('--hot')},{pts:curve(pc),color:css('--cold')}],vlines:[{x:ph,color:css('--hot'),label:'P*='+ph},{x:pc,color:css('--cold'),label:'P*='+pc}]});
+  const bh=1/ph,bc=1/pc;kpi($('k2'),[['热款隐含 b',f(bh,4)],['冷款隐含 b',f(bc,4)],['热/冷敏感度比',f(bh/bc,2)],['热款/均价',f(ph/104,2)+'×']]);
+}
+/* 3 */
+const sales=[40,35,12,13,11,10];
+function s3(){
+  const b=+$('b').value,c=+$('c').value,s0=+$('s0').value/100;$('bV').textContent=f(b,3);$('cV').textContent=c;$('s0V').textContent=f(s0*100)+'%';
+  const tot=sales.reduce((a,x)=>a+x,0),s=sales.map(n=>(1-s0)*n/tot),al=s.map((si,i)=>Math.log(si/s0)+b*prices[i]);
+  let P=prices.slice(),sh;
+  const shares=P=>{const e=P.map((p,i)=>Math.exp(al[i]-b*p)),d=1+e.reduce((a,x)=>a+x,0);return e.map(x=>x/d)};
+  for(let k=0;k<300;k++){sh=shares(P);P=P.map((p,i)=>0.7*p+0.3*(c+1/(b*(1-sh[i]))))}
+  sh=shares(P);
+  $('t3').innerHTML='<tr><th>款</th><th>示意销量</th><th>份额 s</th><th>αᵢ</th><th>现价</th><th>最优价</th><th>差</th></tr>'+names.map((n,i)=>`<tr><td>${n}</td><td>${sales[i]}</td><td>${f(s[i]*100,1)}%</td><td>${f(al[i],2)}</td><td>${prices[i]}</td><td>${f(P[i],0)}</td><td style="color:${P[i]>prices[i]?css('--acc'):css('--warn')}">${P[i]>prices[i]?'+':''}${f(P[i]-prices[i],0)}</td></tr>`).join('');
+  bars($('c3'),760,220,names.map((n,i)=>({label:n,vals:[{v:prices[i],color:css('--mut')},{v:P[i],color:css('--acc')}]})),Math.max(250,...P)*1.1);
+}
+/* 4 */
+function rng(seed){return()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}}
+let seed=7;
+function pois(l,r){if(l>30)return Math.max(0,Math.round(l+Math.sqrt(l)*(r()+r()+r()-1.5)*2));const L=Math.exp(-l);let k=0,p=1;do{k++;p*=r()}while(p>L);return k-1}
+function s4(){
+  const ah=+$('ah').value,ac=+$('ac').value,qh=+$('qh').value,qc=+$('qc').value,T=+$('T').value,fl=+$('fl').value,noise=$('noise').checked;
+  ['ah','ac','qh','qc','T','fl'].forEach(k=>$(k+'V').textContent=$(k).value);
+  const r=rng(seed),items=[{a:ah,b:1/142,q:qh,hot:1},{a:ah,b:1/142,q:qh,hot:1},...[0,1,2,3].map(()=>({a:ac,b:1/86,q:qc,hot:0}))];
+  const hp=[],cp=[],hq=[],cq=[];let bundleEnd=T,rev=0;
+  for(let d=0;d<=T;d++){
+    const left=T-d;
+    items.forEach(it=>{
+      let P=1/it.b;
+      if(it.q>0&&left>0)P=Math.log(it.a*left/it.q)/it.b;
+      P=Math.max(fl,Math.min(400,P));it.P=P;
+      const lam=it.a*Math.exp(-it.b*P),k=Math.min(it.q,noise?pois(lam,r):Math.round(lam));it.q-=k;rev+=k*P;
+    });
+    if(bundleEnd===T&&items.some(i=>i.q<=0))bundleEnd=d;
+    hp.push([d,items[0].P]);cp.push([d,items[2].P]);hq.push([d,items[0].q]);cq.push([d,items[2].q]);
+  }
+  chart($('c4'),760,240,{xmax:T,ymax:Math.max(200,...hp.map(p=>p[1]))*1.05,series:[{pts:hp,color:css('--hot')},{pts:cp,color:css('--cold')}],vlines:bundleEnd<T?[{x:bundleEnd,color:css('--warn'),label:'套装下架'}]:[],hlines:[{y:142,color:css('--hot'),label:'1/b=142'},{y:86,color:css('--cold'),label:'1/b=86'}]});
+  chart($('c5'),760,200,{xmax:T,ymax:Math.max(qh,qc)*1.05,series:[{pts:hq,color:css('--hot')},{pts:cq,color:css('--cold'),dash:1}]});
+  const lastC=cq[cq.length-1][1];
+  kpi($('k4'),[['热款末价',f(hp[hp.length-1][1])],['冷款末价',f(cp[cp.length-1][1])],['冷款剩余库存/款',f(lastC)],['套装下架',bundleEnd<T?`第 ${bundleEnd} 天`:'未下架'],['总收入(6款)',f(rev)]]);
+}
+/* 5 */
+function s5(){
+  const d=+$('d').value/100,fe=+$('fe').value/100,sh=+$('sh').value,st=+$('st').value/100,rs=+$('rs').value/100,p=1/72,c=129*d;
+  $('dV').textContent=f(d*100)+'%';$('feV').textContent=f(fe*100,1)+'%';$('shV').textContent=sh;$('stV').textContent=f(st*100)+'%';$('rsV').textContent=f(rs*100)+'%';
+  const net=(rev,orders)=>rev*(1-fe)-sh*orders;
+  const hot=(142+136)/6,cold=(88+89+84+84)/6;
+  const openRev=(1-p)*(hot+st*cold+(1-st)*rs*cold)+p*335;
+  const items=[
+    ['卖盲盒 108',net(108,1)-c],
+    ['拆盒卖确认款',net(openRev,1)-c],
+    ['确认款整套 618',net(618,1)/6-c],
+    ['不拆封整套 732',net(732,1)/6-c]];
+  const ymin=Math.min(0,...items.map(i=>i[1]))-5,ymax=Math.max(30,...items.map(i=>i[1]))+10;
+  const svg=$('c6'),W=760,H=240,m={l:44,r:12,t:12,b:30},pw=W-m.l-m.r,ph=H-m.t-m.b,Y=y=>m.t+ph-(y-ymin)/(ymax-ymin)*ph;
+  let s='';for(let i=0;i<=4;i++){const y=ymin+(ymax-ymin)*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(y)}" y2="${Y(y)}" stroke="${css('--line')}"/><text x="${m.l-6}" y="${Y(y)+4}" text-anchor="end">${f(y)}</text>`}
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="${css('--fg')}"/>`;
+  const gw=pw/items.length;
+  items.forEach((it,i)=>{const bw=Math.min(70,gw*0.6),x=m.l+i*gw+gw/2-bw/2,v=it[1],col=v>=0?css('--acc'):css('--warn');
+    s+=`<rect x="${x}" y="${Math.min(Y(0),Y(v))}" width="${bw}" height="${Math.abs(Y(v)-Y(0))}" fill="${col}" rx="2"/><text x="${x+bw/2}" y="${v>=0?Y(v)-4:Y(v)+12}" text-anchor="middle">${f(v,1)}</text><text x="${m.l+i*gw+gw/2}" y="${H-10}" text-anchor="middle">${it[0]}</text>`});
+  svg.innerHTML=s;
+  const be=(108*(1-fe)-sh)/129;
+  kpi($('k6'),[['单盒成本 c',f(c,1)],['拆盒期望收入',f(openRev,1)],['卖盲盒平衡折扣',f(be*100,1)+'%'],['卖盲盒毛利率',f((items[0][1])/108*100,1)+'%']]);
+}
+['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
+['ah','ac','qh','qc','T','fl','noise'].forEach(i=>$(i).oninput=s4);$('re').onclick=()=>{seed=Math.floor(Math.random()*1e9);s4()};
+function all(){s1();s2();s3();s4();s5()}all();matchMedia('(prefers-color-scheme:dark)').onchange=all;
+</script>
+</body>
+</html>
