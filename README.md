@@ -4,7 +4,7 @@
 
 Build a pricing model for a blind box series that maximises revenue, and use it to answer three questions: why a hot figure is priced the way it is, how prices should move when stock piles up, and roughly how much profit the seller makes.
 
-Interactive page (drag the parameters to see the results): <https://arcadianlyric.github.io/Model_BlindBox/>. Source: [docs/index.html](docs/index.html).
+[Interactive page](https://arcadianlyric.github.io/Model_BlindBox/). 
 
 ## Results
 
