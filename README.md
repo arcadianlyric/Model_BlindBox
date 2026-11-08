@@ -1,47 +1,48 @@
 # Model_BlindBox
 
 ## Goal
-为一个盲盒系列建立定价模型,以收益最大化为目标,并回答三个问题:热销款为什么这个定价、库存积压时价格会怎么走、卖家的利润大约有多少. 
 
-交互页面(拖动参数查看结果):<https://arcadianlyric.github.io/Model_BlindBox/>
+Build a pricing model for a blind box series that maximises revenue, and use it to answer three questions: why a hot figure is priced the way it is, how prices should move when stock piles up, and roughly how much profit the seller makes.
+
+Interactive page (drag the parameters to see the results): <https://arcadianlyric.github.io/Model_BlindBox/>. Source: [docs/index.html](docs/index.html).
 
 ## Results
 
-数据来自某淘宝卖家的公开价格:6 个常规款 142 / 136 / 88 / 89 / 84 / 84,1 个隐藏款 335,单盒 108,确认款整套 618,不拆封整套 732. 官方售价 129/盒、774/套,隐藏款概率 1/72. 
+The data are public prices from one Taobao seller: 6 regular figures at 142 / 136 / 88 / 89 / 84 / 84, 1 hidden figure at 335, a single blind box at 108, a confirmed-figure set (all 6 regular figures) at 618 and a sealed, unopened set at 732. Official prices are 129 per box and 774 per set, and the hidden figure probability is 1/72.
 
-**1. 定价自洽. ** 6 个常规款均价 103.8,计入隐藏款后拆一盒的期望收入约 107,与单盒售价 108 几乎相等. 卖家把"确认款期望价值 ≈ 盲盒价"作为定价锚. 确认款整套 618 只比单买合计 623 便宜 5 元,几乎没有折扣;不拆封 732 比 618 贵 114,隐藏款机会价值只能解释约 28,剩余约 86 是原封、大盒和开盒体验的溢价. 
+**1. Prices are internally consistent.** The 6 regular figures average 103.8. Including the hidden figure, the expected revenue from opening one box is about 107, almost exactly the 108 box price, so the seller appears to anchor on "expected value of confirmed figures ≈ box price". The confirmed set at 618 is only 5 below buying the 6 figures separately (623), so it carries almost no discount. The sealed set at 732 is 114 above the confirmed set; the hidden-figure chance explains only about 28 of that, leaving roughly 86 as a premium for sealed packaging, the outer case and the unboxing experience.
 
-**2. 142 隐含的价格敏感度. ** 在指数需求 D = a·e^(−bP) 下,收入最大化价格为 P* = 1/b. 142 对应 b ≈ 0.0070,冷款 84~89 对应 b ≈ 0.0115,即热款买家的价格敏感度约为冷款的 60%. 这个结论依赖"卖家定价最优且卖得出去"两个前提,"近期热销"的标签说明 142 可能还低于最优价. 
+**2. What 142 implies about price sensitivity.** Under exponential demand D = a·e^(−bP), the revenue-maximising price is P* = 1/b. A price of 142 implies b ≈ 0.0070, while the cold figures at 84 to 89 imply b ≈ 0.0115, so buyers of the hot figure are about 60% as price sensitive as buyers of the cold ones. This relies on two assumptions, that the seller prices optimally and that the item sells. The "recently hot" label suggests 142 may still be below the optimum.
 
-**3. 库存动态. ** 当价格取 P = ln(aT/Q)/b(周期内刚好卖完)时,库存紧的热款价格高于 1/b 并随库存减少上升,积压的冷款低于 1/b 并缓慢下调. 热款先卖光会使 618 套装下架,冷款只剩单卖,积压风险进一步放大. 均衡更接近"热款涨价、冷款缓降、减少拆盒",而不是简单的"热涨冷跌". 
+**3. Inventory dynamics.** With the price set to P = ln(aT/Q)/b (sell out exactly by the end of the horizon), a hot figure with tight stock is priced above 1/b and rises as stock falls, while overstocked cold figures are priced below 1/b and drift down slowly. If the hot figures sell out first, the 618 bundle is delisted, cold figures can only be sold singly, and the overstock risk grows. The equilibrium looks like "hot figures up, cold figures down slowly, fewer boxes opened" rather than a simple "hot up, cold down".
 
-**4. 卖家利润. ** 成本无法唯一识别,只能给出区间. 默认参数下(拿货折扣 75%、平台费 1%、运费 4 元/单、冷款售出率 85%、未售出残值 50%),每盒利润约为:
+**4. Seller profit.** Cost cannot be uniquely identified from prices, so only a range is possible. With the default parameters (purchase discount 75%, platform fee 1%, shipping 4 per order, cold sell-through 85%, unsold stock salvaged at 50% of list), profit per box is about:
 
-| 渠道 | 每盒利润(元) |
+| Channel | Profit per box (CNY) |
 |---|---|
-| 卖盲盒 108 | 6.2 |
-| 拆盒卖确认款 | 1.0 |
-| 确认款整套 618 | 4.6 |
-| 不拆封整套 732 | 23.4 |
+| Sell blind box at 108 | 6.2 |
+| Open box, sell confirmed figures | 1.0 |
+| Confirmed set at 618 | 4.6 |
+| Sealed set at 732 | 23.4 |
 
-单卖盲盒的盈亏平衡折扣约为 80%. 拆盒卖确认款的利润几乎全靠拿货折扣,而且冷款卖不完时比直接卖盲盒更差,不拆封整套是毛利最厚的渠道. 
+Selling blind boxes at 108 breaks even at a purchase discount of about 80%. Opening boxes and selling confirmed figures earns almost nothing beyond the purchase discount, and is worse than selling the box when cold figures do not sell through. The sealed set is the highest-margin channel.
 
 ## Discussion
 
-- 上表依赖拿货折扣这一假设,真实值需要用各款已售数量回归得到:先估出 β 和各款 αᵢ,再由 c = Pᵢ − 1/(β(1−sᵢ)) 反推成本,6 款结果应基本一致,差异大则说明"定价最优"不成立,可能是锚定竞品. 
-- 页面第三个模块的销量(40/35/12/13/11/10)是示意值,不是真实数据. 
-- 第三个模块按每款独立的一阶条件迭代;在 logit 下严格的多品类垄断定价是统一加价,二者的差距尚未量化. 
-- 动态库存模块是确定性价格规则加泊松噪声的模拟,不是动态规划的最优策略. 
-- 没有考虑竞品卖家、官方补货和二级市场溢价,这些都会改变需求曲线. 建立在正品基础上,赝品成本更低,会改变模型.
+- The profit table depends on the assumed purchase discount. The real value should be recovered by regressing on per-figure sales: estimate β and each αᵢ, then back out cost from c = Pᵢ − 1/(β(1−sᵢ)). The six estimates should roughly agree; large disagreement means "priced optimally" fails and prices may instead be anchored to competitors.
+- The sales in the third module of the page (40 / 35 / 12 / 13 / 11 / 10) are illustrative placeholders, not real data.
+- The third module iterates each figure's first-order condition independently. Under logit, strict multi-product monopoly pricing is a uniform markup; the gap between the two has not been quantified.
+- The inventory module is a deterministic pricing rule with Poisson noise, not the optimal policy from dynamic programming.
+- Competing sellers, official restocks and secondary-market premiums are not modelled, and all would change the demand curve. The model assumes genuine products; counterfeits have lower costs and would change the model.
 
 ## Material and methods
 
-- 需求:指数需求 D = a·e^(−bP),收入最大化价格 P* = 1/b. 
-- 多款竞争:多项 Logit,份额 sᵢ = exp(αᵢ − βPᵢ) / (1 + Σⱼ exp(αⱼ − βPⱼ)),最优加价 Pᵢ − c = 1/(β(1−sᵢ)) [1,2]. 由销量和现价反推 αᵢ,再迭代求理论价. 
-- 库存定价:对剩余库存 Q 和剩余天数 T 逐日重算价格,思路来自有限周期库存动态定价 [3]. 
-- 利润:每盒利润 = 收入 × (1 − 平台费) − 运费 − 129 × 拿货折扣. 
+- Demand: exponential demand D = a·e^(−bP), with revenue-maximising price P* = 1/b.
+- Competition across figures: multinomial logit, share sᵢ = exp(αᵢ − βPᵢ) / (1 + Σⱼ exp(αⱼ − βPⱼ)), optimal markup Pᵢ − c = 1/(β(1−sᵢ)) [1,2]. αᵢ is backed out from sales and current prices, then the model price is found by iteration.
+- Inventory pricing: the price is recomputed each day from remaining stock Q and remaining days T, following the finite-horizon dynamic pricing literature [3].
+- Profit: profit per box = revenue × (1 − platform fee) − shipping − 129 × purchase discount.
 
-交互页面为单个静态 HTML,无外部依赖,图表用内联 SVG 绘制. 
+The interactive page is a single static HTML file with no external dependencies; charts are inline SVG. To host it, enable GitHub Pages in the repository settings with the main branch and the /docs folder.
 
 ## References
 
