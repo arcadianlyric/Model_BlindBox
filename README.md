@@ -3,7 +3,7 @@
 ## Goal
 为一个盲盒系列建立定价模型,以收益最大化为目标,并回答三个问题:热销款为什么这个定价、库存积压时价格会怎么走、卖家的利润大约有多少. 
 
-交互页面(拖动参数查看结果):<https://arcadianlyric.github.io/Model_BlindBox/>,源文件为 [docs/index.html](docs/index.html),启用方法见文末. 
+交互页面(拖动参数查看结果):<https://arcadianlyric.github.io/Model_BlindBox/>
 
 ## Results
 
@@ -42,10 +42,6 @@
 - 利润:每盒利润 = 收入 × (1 − 平台费) − 运费 − 129 × 拿货折扣. 
 
 交互页面为单个静态 HTML,无外部依赖,图表用内联 SVG 绘制. 
-
-## Pages
-
-在仓库 Settings → Pages 中选择 main 分支的 /docs 目录. 
 
 ## References
 
