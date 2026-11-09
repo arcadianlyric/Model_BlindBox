@@ -50,37 +50,39 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 
 <!-- 2 -->
 <section>
-<h2>2. Inferring price sensitivity: revenue maximisation gives P* = 1/b</h2>
-<p class="note">Demand D = a·e<sup>−bP</sup>, revenue R = P·D, maximised at P = 1/b. Observed price implies b. Curves are normalised to a peak of 1.</p>
+<h2>2. What a price implies if it is assumed optimal: P* = c + 1/b</h2>
+<p class="note">Demand D = a·e<sup>−bP</sup>, profit (P − c)·D, maximised at P = c + 1/b, so an observed price implies b = 1/(P − c). With c = 0 this is revenue maximisation. Curves are normalised to a peak of 1.</p>
 <div class="ctl">
 <label>Hot figure observed price <b id="phV">142</b><input id="ph" type="range" min="60" max="250" value="142"></label>
 <label>Cold figure observed price <b id="pcV">86</b><input id="pc" type="range" min="40" max="250" value="86"></label>
+<label>Unit cost / salvage c <b id="cc2V">0</b><input id="cc2" type="range" min="0" max="80" value="0"></label>
 </div>
 <svg id="c2" viewBox="0 0 760 260"></svg>
 <div class="legend"><span><i style="background:var(--hot)"></i>Hot</span><span><i style="background:var(--cold)"></i>Cold</span></div>
 <div class="kpi" id="k2"></div>
-<p class="note">Assumes the seller prices optimally and the item sells. Cold-figure buyers are more price sensitive; fans of the hot figure are willing to pay more.</p>
+<p class="note" id="t2"></p>
 </section>
 
 <!-- 3 -->
 <section>
-<h2>3. Multinomial logit: shares and optimal markup</h2>
-<p class="note">sᵢ ∝ exp(αᵢ − β·Pᵢ),optimal markup Pᵢ − c = 1/(β(1−sᵢ)). The sales below are <b>illustrative placeholders</b>; replace them with real SKU sales. α is backed out from sales and current prices, then the model price is found by iteration and compared with the current price.</p>
+<h2>3. Multinomial logit: who owns the six figures matters</h2>
+<p class="note">sᵢ ∝ exp(αᵢ − β·Pᵢ),The sales below are <b>illustrative placeholders</b>; replace them with real SKU sales. α is backed out from sales and current prices, then the model price is solved under the chosen ownership. Independent sellers (one seller per figure) satisfy Pᵢ − c = 1/(β(1−sᵢ)) for each figure; one seller owning all six maximises total profit, which under a common β gives the same markup on every figure, Pᵢ − c = 1/β + Π, where Π is the optimal profit per visitor.</p>
 <div class="ctl">
 <label>β (price sensitivity) <b id="bV">0.020</b><input id="b" type="range" min="0.008" max="0.05" step="0.001" value="0.02"></label>
 <label>Unit cost / salvage c = <b id="cV">60</b><input id="c" type="range" min="0" max="110" value="60"></label>
 <label>Outside option share s₀ = <b id="s0V">50%</b><input id="s0" type="range" min="10" max="90" value="50"></label>
+<label>Ownership <select id="own"><option value="joint">One seller owns all six (joint optimum)</option><option value="nash">Independent seller per figure (Nash)</option></select></label>
 </div>
 <table id="t3"></table>
 <svg id="c3" viewBox="0 0 760 220" style="margin-top:12px"></svg>
-<div class="legend"><span><i style="background:var(--mut)"></i>Current price</span><span><i style="background:var(--acc)"></i>Model optimal price</span></div>
-<p class="note">Model price &gt; current price: room to raise the price (inventory-constrained or clearance-price view). Model price &lt; current price: current price looks high. Each figure is iterated independently on its first-order condition; strict multi-product monopoly pricing under logit is a uniform markup, which can serve as a reference bound.</p>
+<div class="legend"><span><i style="background:var(--mut)"></i>Current price</span><span><i style="background:var(--acc)"></i>Model price under the chosen ownership</span></div>
+<p class="note">β is not identified here. Each figure has its own αᵢ and only one price–sales point, so any β fits the sales exactly once αᵢ is backed out; the model prices move with the β slider, not with the data. Identifying β needs price variation over time for the same figure, a randomised price test (section 6) or a credible instrument. The joint optimum is also why a single seller has no reason, under a common β, to price hot figures higher: popularity raises sales, not the markup. A hot-figure premium has to come from scarcity, which section 7 models.</p>
 </section>
 
 <!-- 4 -->
 <section>
-<h2>4. Dynamic inventory: hot figures rise, cold figures drift down</h2>
-<p class="note">Recomputed daily with Q units left and T days remaining. Price P = ln(aT/Q)/b sells out exactly by the end of the horizon: tight stock (Q &lt; T·a/e) gives a price above 1/b that rises as stock falls; overstock gives a price below 1/b that steps down, never below salvage value. 2 hot and 4 cold figures; the full-set bundle needs all 6 in stock.</p>
+<h2>4. Rolling clearance heuristic for inventory</h2>
+<p class="note">Each day the price is reset to P = ln(a·T<sub>left</sub>/Q<sub>left</sub>)/b, the price at which expected demand would exactly use up the remaining stock by the end of the horizon, floored at salvage value. This is a heuristic, not the optimal dynamic policy, which needs a value function over stock and time. Tight stock (Q &lt; T·a/e) gives a price above 1/b; overstock gives a price below 1/b. 2 hot and 4 cold figures, each priced on its own.</p>
 <div class="ctl">
 <label>Hot daily demand base a <b id="ahV">6</b><input id="ah" type="range" min="1" max="20" value="6"></label>
 <label>Cold daily demand base a <b id="acV">3</b><input id="ac" type="range" min="1" max="20" value="3"></label>
@@ -94,7 +96,7 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 <svg id="c5" viewBox="0 0 760 200"></svg>
 <div class="legend"><span><i style="background:var(--hot)"></i>Hot (price / stock)</span><span><i style="background:var(--cold)"></i>Cold (price / stock)</span></div>
 <div class="kpi" id="k4"></div>
-<p class="note">b is 1/142 for hot and 1/86 for cold (from section 2). As hot stock runs out the price jumps; if hot figures sell out first the bundle is delisted and cold figures can only be sold singly, drifting down further. The upstream decision (whether to open another box) depends on whether the expected marginal revenue of the next box exceeds 108.</p>
+<p class="note">b is 1/142 for hot and 1/86 for cold (section 2 with c = 0). Without noise (sales then follow expected demand, in fractional units), the rule keeps the ratio of stock to remaining days constant, so the price stays at the "constant-rule price" in the KPIs; turn the Poisson noise off to see it. Rising or falling paths come from random sales, whole-unit sales and the last few days, not from the rule itself. A price line ends when that figure sells out. The marker shows the first sell-out, after which the confirmed set could no longer be offered; demand here does not react to that, which section 7 handles.</p>
 </section>
 <!-- 5 -->
 <section>
@@ -114,7 +116,7 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 <!-- 6 -->
 <section>
 <h2>6. Finding the optimal price from a price test</h2>
-<p class="note">Section 2 assumes the current price is optimal, which is circular. To test that assumption, you need independent demand evidence: sales at the current price and at a nearby test price. That gives the slope b = ln(D₀/D₁) / (P₁ − P₀). Daily profit is then π(P) = (P − c)·D₀·e<sup>−b(P−P₀)</sup>, maximised at P = c + 1/b, where c is the unit cost, or the salvage value if the cost is sunk. If stock is tight, the clearance price P₀ + ln(D₀T/Q)/b is a floor on the price. The price is also capped at a ceiling for willingness to pay, because 1/b blows up when the test barely moves sales. The sales numbers below are placeholders: replace them with your own test.</p>
+<p class="note">Section 2 assumes the current price is optimal, which is circular. To test that assumption, you need independent demand evidence: sales at the current price and at a nearby test price. That gives the slope b = ln(D₀/D₁) / (P₁ − P₀). With Q units and T days left, profit over the horizon is H(P) = (P − c)·min(D(P)·T, Q), where D(P) = D₀·e<sup>−b(P−P₀)</sup> and c is the unit cost, or the salvage value if the cost is sunk. Without a stock limit H peaks at P = c + 1/b. Below the clearance price P₀ + ln(D₀T/Q)/b the stock sells out early and sales are capped at Q, so H rises with price there; the optimum is therefore the larger of the two. The price is also capped at a ceiling for willingness to pay, because 1/b blows up when the test barely moves sales. The sales numbers below are placeholders: replace them with your own test.</p>
 <div class="ctl">
 <label>Current price P₀ <b id="p0V">142</b><input id="p0" type="range" min="60" max="250" value="142"></label>
 <label>Daily sales at P₀ <b id="d0V">5.0</b><input id="d0" type="range" min="1" max="20" step="0.1" value="5"></label>
@@ -126,9 +128,38 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 <label>Days left T <b id="t6V">60</b><input id="t6" type="range" min="7" max="180" value="60"></label>
 </div>
 <svg id="c7" viewBox="0 0 760 240"></svg>
-<div class="legend"><span><i style="background:var(--acc)"></i>Daily profit (feasible)</span><span><i style="background:var(--mut)"></i>Dashed: stock would sell out before the horizon ends</span><span><i style="background:var(--warn)"></i>Current price</span><span><i style="background:var(--hot)"></i>Optimal price</span></div>
+<div class="legend"><span><i style="background:var(--acc)"></i>Profit over the horizon</span><span><i style="background:var(--mut)"></i>Dashed: sells out before the horizon ends (sales capped at Q)</span><span><i style="background:var(--warn)"></i>Current price</span><span><i style="background:var(--hot)"></i>Optimal price</span></div>
 <div class="kpi" id="k7"></div>
 <p class="note" id="t7"></p>
+</section>
+<!-- 7 -->
+<section>
+<h2>7. One decision: box opening, figure prices and set prices</h2>
+<p class="note">Blind boxes couple supply. Opening a box turns one sealed box into one random figure (hidden with probability 1/72), the confirmed set uses one of each regular figure, and the sealed set uses six sealed boxes. So the seller's choices of how many boxes to open, what to charge for each figure and what to charge for each set are one inventory–pricing problem, with the same structure as network revenue management: a set is a multi-leg itinerary and opening a box adds random capacity [Gallego &amp; van Ryzin 1997].</p>
+<p class="note">Demand: λ visitors a day each choose one of 10 options (sealed box, sealed set, confirmed set, 6 figures, hidden figure) or nothing, by multinomial logit with option-specific price sensitivity β<sub>j</sub> = ε / observed price<sub>j</sub>, so every option has elasticity ε at its observed price. Utility at the observed price is κ, plus the hot-figure boost for the two hot figures, +0.5 for the sealed box and −1 for each set. Leftover stock is worth the salvage share of its observed price.</p>
+<p class="note">Planning model (fluid approximation): for each number of boxes to open, prices maximise expected revenue plus salvage subject to expected sales ≤ supply. The solution prices every option at its effective cost plus 1/β<sub>j</sub> plus a common term, where the effective cost is salvage plus the shadow price of each unit it uses. The shadow prices make the opening rule explicit: open another box while its expected shadow value (5/6 · 71/72 of a random regular figure plus 1/72 of a hidden one) exceeds the shadow value of keeping it sealed.</p>
+<div class="ctl">
+<label>Elasticity at observed prices ε <b id="ep7V">3.0</b><input id="ep7" type="range" min="1.5" max="6" step="0.1" value="3"></label>
+<label>Visitors per day λ <b id="lam7V">20</b><input id="lam7" type="range" min="5" max="80" value="20"></label>
+<label>Utility at observed prices κ <b id="kap7V">-3.5</b><input id="kap7" type="range" min="-6" max="-1" step="0.1" value="-3.5"></label>
+<label>Hot figure popularity boost <b id="dh7V">1.0</b><input id="dh7" type="range" min="0" max="3" step="0.1" value="1"></label>
+<label>Sealed boxes in stock N <b id="N7V">240</b><input id="N7" type="range" min="30" max="600" step="6" value="240"></label>
+<label>Horizon T (days) <b id="T7V">60</b><input id="T7" type="range" min="14" max="120" value="60"></label>
+<label>Salvage (share of observed price) <b id="rho7V">50%</b><input id="rho7" type="range" min="0" max="90" value="50"></label>
+</div>
+<svg id="c8" viewBox="0 0 760 220"></svg>
+<div class="legend"><span><i style="background:var(--acc)"></i>Planned revenue + salvage vs boxes opened</span><span><i style="background:var(--hot)"></i>Best number to open</span></div>
+<div class="kpi" id="k8"></div>
+<table id="t8"></table>
+<table id="t8b" style="margin-top:12px"></table>
+<p class="note" id="n8"></p>
+<h2 style="margin-top:20px">Testing the plan with random demand</h2>
+<p class="note">Four policies on the same random visitors (20 runs each): <b>Observed menu</b> keeps today's prices and opens boxes whenever a regular figure is out of stock (up to 12 a day), the common reseller habit. <b>Static plan</b> opens the planned number of boxes on day 1 and fixes the planned prices. <b>Re-solving</b> re-plans every day from the stock actually left, opens whatever the new plan says to open, and resets all prices. <b>Re-solving, gradual opening</b> is the same but opens only the planned total ÷ days left each day, keeping boxes sealed for longer. Boxes are opened one at a time with independent random figures; real sealed sets often contain one of each, which would reduce the imbalance.</p>
+<div><button id="run7">Run simulation</button></div>
+<table id="t9" style="margin-top:12px"></table>
+<svg id="c9" viewBox="0 0 760 220"></svg>
+<div class="legend"><span><i style="background:var(--hot)"></i>Hot 1 price (re-solving, first run)</span><span><i style="background:var(--cold)"></i>Cold 1 price</span><span><i style="background:var(--acc)"></i>Sealed box price</span></div>
+<p class="note" id="n9"></p>
 </section>
 <p class="note">Illustrative model only; sales, costs and similar inputs are placeholder parameters.</p>
 </main>
@@ -163,28 +194,37 @@ const kpi=(el,a)=>el.innerHTML=a.map(([k,v])=>`<div><small>${k}</small><span>${v
 /* 1 */
 function s1(){
   const N=+$('n').value,bp=+$('bp').value,p=1/N;$('nV').textContent=N;$('bpV').textContent=bp;
-  const sum=prices.reduce((a,b)=>a+b,0),mean=sum/6,ev=(1-p)*mean+p*HID,hidV=6*p*HID;
+  const sum=prices.reduce((a,b)=>a+b,0),mean=sum/6,ev=(1-p)*mean+p*HID,hidV=6*p*(HID-mean);
   bars($('c1'),760,220,prices.map((v,i)=>({label:names[i],vals:[{v,color:i<2?css('--hot'):css('--cold')}]})).concat([{label:'Hidden',vals:[{v:HID,color:css('--acc')}]}]),360,[{y:bp,color:css('--warn'),label:'Box price '+bp}]);
-  kpi($('k1'),[['Regular mean price',f(mean,1)],['Box expected value',f(ev,1)],['EV − box price',f(ev-bp,1)],['Sealed set gap',f(732-sum-hidV,0)]]);
-  $('t1').textContent=`The 6 regular figures sum to ${sum}; the confirmed set at 618 is only ${sum-618} cheaper. Six blind boxes cost ${6*bp}. The sealed set at 732 is 114 above the confirmed set; the hidden-figure chance is worth about 6×335/${N} = ${f(hidV,0)}, leaving ${f(114-hidV,0)} as a premium for sealed packaging, the outer case and the unboxing experience.`;
+  kpi($('k1'),[['Regular mean price',f(mean,1)],['Box expected value',f(ev,1)],['EV − box price',f(ev-bp,1)],['Sealed premium over 618',f(732-618-hidV,1)]]);
+  $('t1').textContent=`The 6 regular figures sum to ${sum}; the confirmed set at 618 is only ${sum-618} cheaper. Six blind boxes cost ${6*bp}. The sealed set at 732 is 114 above the confirmed set; a hidden figure replaces a regular one, so the hidden-figure chance adds about 6/${N} × (335 − ${f(mean,1)}) = ${f(hidV,1)}, leaving ${f(114-hidV,1)} as a premium for sealed packaging, the outer case and the unboxing experience.`;
 }
 /* 2 */
 function s2(){
-  const ph=+$('ph').value,pc=+$('pc').value;$('phV').textContent=ph;$('pcV').textContent=pc;
-  const curve=(P0)=>{const b=1/P0,pts=[];for(let P=0;P<=300;P+=4)pts.push([P,P*Math.exp(-b*P)/(P0*Math.exp(-1))]);return pts};
+  const ph=+$('ph').value,pc=+$('pc').value,c=+$('cc2').value;$('phV').textContent=ph;$('pcV').textContent=pc;$('cc2V').textContent=c;
+  if(Math.min(ph,pc)<=c){$('c2').innerHTML='';kpi($('k2'),[]);$('t2').textContent='Both observed prices must be above c; a price at or below cost cannot be optimal.';return}
+  const curve=P0=>{const b=1/(P0-c),pk=(P0-c)*Math.exp(-b*P0),pts=[];for(let P=c;P<=300;P+=4)pts.push([P,(P-c)*Math.exp(-b*P)/pk]);return pts};
   chart($('c2'),760,260,{xmax:300,ymax:1.1,yd:1,series:[{pts:curve(ph),color:css('--hot')},{pts:curve(pc),color:css('--cold')}],vlines:[{x:ph,color:css('--hot'),label:'P*='+ph},{x:pc,color:css('--cold'),label:'P*='+pc}]});
-  const bh=1/ph,bc=1/pc;kpi($('k2'),[['Hot implied b',f(bh,4)],['Cold implied b',f(bc,4)],['Hot / cold sensitivity',f(bh/bc,2)],['Hot price / mean',f(ph/104,2)+'×']]);
+  const bh=1/(ph-c),bc=1/(pc-c);kpi($('k2'),[['Hot implied b',f(bh,4)],['Cold implied b',f(bc,4)],['Hot / cold sensitivity',f(bh/bc,2)],['Hot price / mean',f(ph/104,2)+'×']]);
+  $('t2').textContent=`This is not a measurement: b follows from two assumptions, that ${ph} and ${pc} are optimal and that unit cost is ${c}. Under them, hot-figure buyers are ${f(bh/bc*100)}% as price sensitive as cold-figure buyers. Raising c towards the prices makes both b larger and changes the ratio, so the "about 60%" figure holds only at c = 0. Section 6 shows how to measure b instead.`;
 }
 /* 3 */
+// single-seller MNL optimum with option-specific price sensitivity: P_j - c_j = 1/b_j + Pi,
+// where Pi (profit per visitor) solves Pi = sum_j exp(al_j - b_j c_j - 1 - b_j Pi) / b_j
+function joint(al,be,c,av){
+  const y=P=>al.map((a,j)=>av[j]?Math.exp(a-be[j]*c[j]-1-be[j]*P)/be[j]:0);
+  let P=0;for(let i=0;i<60;i++){const t=y(P),g=t.reduce((a,x)=>a+x,0),dg=t.reduce((a,x,j)=>a+x*be[j],0),d=(P-g)/(1+dg);P-=d;if(Math.abs(d)<1e-10)break}
+  return c.map((x,j)=>x+1/be[j]+P);
+}
 const sales=[40,35,12,13,11,10];
 function s3(){
   const b=+$('b').value,c=+$('c').value,s0=+$('s0').value/100;$('bV').textContent=f(b,3);$('cV').textContent=c;$('s0V').textContent=f(s0*100)+'%';
   const tot=sales.reduce((a,x)=>a+x,0),s=sales.map(n=>(1-s0)*n/tot),al=s.map((si,i)=>Math.log(si/s0)+b*prices[i]);
-  let P=prices.slice(),sh;
+  let P=prices.slice();
   const shares=P=>{const e=P.map((p,i)=>Math.exp(al[i]-b*p)),d=1+e.reduce((a,x)=>a+x,0);return e.map(x=>x/d)};
-  for(let k=0;k<300;k++){sh=shares(P);P=P.map((p,i)=>0.7*p+0.3*(c+1/(b*(1-sh[i]))))}
-  sh=shares(P);
-  $('t3').innerHTML='<tr><th>Figure</th><th>Sales (placeholder)</th><th>Share s</th><th>αᵢ</th><th>Current</th><th>Optimal</th><th>Gap</th></tr>'+names.map((n,i)=>`<tr><td>${n}</td><td>${sales[i]}</td><td>${f(s[i]*100,1)}%</td><td>${f(al[i],2)}</td><td>${prices[i]}</td><td>${f(P[i],0)}</td><td style="color:${P[i]>prices[i]?css('--acc'):css('--warn')}">${P[i]>prices[i]?'+':''}${f(P[i]-prices[i],0)}</td></tr>`).join('');
+  if($('own').value==='joint')P=joint(al,al.map(()=>b),al.map(()=>c),al.map(()=>true));
+  else for(let k=0;k<300;k++){const sh=shares(P);P=P.map((p,i)=>0.7*p+0.3*(c+1/(b*(1-sh[i]))))}
+  $('t3').innerHTML='<tr><th>Figure</th><th>Sales (placeholder)</th><th>Share s</th><th>αᵢ</th><th>Current</th><th>Model</th><th>Gap</th></tr>'+names.map((n,i)=>`<tr><td>${n}</td><td>${sales[i]}</td><td>${f(s[i]*100,1)}%</td><td>${f(al[i],2)}</td><td>${prices[i]}</td><td>${f(P[i],0)}</td><td style="color:${P[i]>prices[i]?css('--acc'):css('--warn')}">${P[i]>prices[i]?'+':''}${f(P[i]-prices[i],0)}</td></tr>`).join('');
   bars($('c3'),760,220,names.map((n,i)=>({label:n,vals:[{v:prices[i],color:css('--mut')},{v:P[i],color:css('--acc')}]})),Math.max(250,...P)*1.1);
 }
 /* 4 */
@@ -194,23 +234,24 @@ function pois(l,r){if(l>30)return Math.max(0,Math.round(l+Math.sqrt(l)*(r()+r()+
 function s4(){
   const ah=+$('ah').value,ac=+$('ac').value,qh=+$('qh').value,qc=+$('qc').value,T=+$('T').value,fl=+$('fl').value,noise=$('noise').checked;
   ['ah','ac','qh','qc','T','fl'].forEach(k=>$(k+'V').textContent=$(k).value);
-  const r=rng(seed),items=[{a:ah,b:1/142,q:qh,hot:1},{a:ah,b:1/142,q:qh,hot:1},...[0,1,2,3].map(()=>({a:ac,b:1/86,q:qc,hot:0}))];
-  const hp=[],cp=[],hq=[],cq=[];let bundleEnd=T,rev=0;
-  for(let d=0;d<=T;d++){
+  const r=rng(seed),items=[{a:ah,b:1/142,q:qh},{a:ah,b:1/142,q:qh},...[0,1,2,3].map(()=>({a:ac,b:1/86,q:qc}))];
+  const hp=[],cp=[],hq=[],cq=[];let first=null,rev=0;
+  for(let d=0;d<T;d++){
     const left=T-d;
+    hq.push([d,items[0].q]);cq.push([d,items[2].q]);
     items.forEach(it=>{
-      let P=1/it.b;
-      if(it.q>0&&left>0)P=Math.log(it.a*left/it.q)/it.b;
-      P=Math.max(fl,Math.min(400,P));it.P=P;
-      const lam=it.a*Math.exp(-it.b*P),k=Math.min(it.q,noise?pois(lam,r):Math.round(lam));it.q-=k;rev+=k*P;
+      it.P=null;if(it.q<=0)return;
+      const P=Math.max(fl,Math.min(400,Math.log(it.a*left/it.q)/it.b));it.P=P;
+      const lam=it.a*Math.exp(-it.b*P),k=Math.min(it.q,noise?pois(lam,r):lam);it.q-=k;rev+=k*P;
     });
-    if(bundleEnd===T&&items.some(i=>i.q<=0))bundleEnd=d;
-    hp.push([d,items[0].P]);cp.push([d,items[2].P]);hq.push([d,items[0].q]);cq.push([d,items[2].q]);
+    if(items[0].P!==null)hp.push([d,items[0].P]);if(items[2].P!==null)cp.push([d,items[2].P]);
+    if(first===null&&items.some(i=>i.q<=0))first=d+1;
   }
-  chart($('c4'),760,240,{xmax:T,ymax:Math.max(200,...hp.map(p=>p[1]))*1.05,series:[{pts:hp,color:css('--hot')},{pts:cp,color:css('--cold')}],vlines:bundleEnd<T?[{x:bundleEnd,color:css('--warn'),label:'Bundle delisted'}]:[],hlines:[{y:142,color:css('--hot'),label:'1/b=142'},{y:86,color:css('--cold'),label:'1/b=86'}]});
+  hq.push([T,items[0].q]);cq.push([T,items[2].q]);
+  const ch=Math.max(fl,Math.log(ah*T/qh)*142),cc=Math.max(fl,Math.log(ac*T/qc)*86);
+  chart($('c4'),760,240,{xmax:T,ymax:Math.max(200,...hp.map(p=>p[1]))*1.05,series:[{pts:hp,color:css('--hot')},{pts:cp,color:css('--cold')}],vlines:first!==null?[{x:first,color:css('--warn'),label:'First sell-out'}]:[],hlines:[{y:142,color:css('--hot'),label:'1/b=142'},{y:86,color:css('--cold'),label:'1/b=86'}]});
   chart($('c5'),760,200,{xmax:T,ymax:Math.max(qh,qc)*1.05,series:[{pts:hq,color:css('--hot')},{pts:cq,color:css('--cold'),dash:1}]});
-  const lastC=cq[cq.length-1][1];
-  kpi($('k4'),[['Hot final price',f(hp[hp.length-1][1])],['Cold final price',f(cp[cp.length-1][1])],['Cold stock left per figure',f(lastC)],['Bundle delisted',bundleEnd<T?`Day ${bundleEnd}`:'Never'],['Total revenue (6 figures)',f(rev)]]);
+  kpi($('k4'),[['Hot constant-rule price',f(ch)],['Cold constant-rule price',f(cc)],['Hot stock left',f(items[0].q)],['Cold stock left per figure',f(items[2].q)],['First sell-out',first!==null?`Day ${first}`:'None'],['Total revenue (6 figures)',f(rev)]]);
 }
 /* 5 */
 function s5(){
@@ -241,22 +282,102 @@ function s6(){
   [['p0',p0],['d0',f(d0,1)],['p1',p1],['d1',f(d1,1)],['cst',c],['ce',ce],['q6',Q],['t6',T]].forEach(([k,v])=>$(k+'V').textContent=v);
   if(p1===p0||(d1-d0)/(p1-p0)>=0){kpi($('k7'),[]);$('c7').innerHTML='';$('c7').style.display='none';$('t7').textContent=p1===p0?'P₁ equals P₀, so there is no price variation to estimate b from.':`Sales moved from ${f(d0,1)} to ${f(d1,1)} per day while price moved from ${f(p0)} to ${f(p1)}, so demand does not fall as price rises and b cannot be estimated (the exponential model needs b > 0). In real data this usually means noise, a promotion, a stock-out or a shift in demand between the two periods; repeat the test over a longer window.`;return}
   $('c7').style.display='';
-  const b=Math.log(d0/d1)/(p1-p0),D=P=>d0*Math.exp(-b*(P-p0)),pi=P=>(P-c)*D(P);
+  const b=Math.log(d0/d1)/(p1-p0),D=P=>d0*Math.exp(-b*(P-p0)),pi=P=>(P-c)*Math.min(D(P)*T,Q),out=P=>D(P)*T>Q?Q/D(P):null;
   const pu=c+1/b,pc=p0+Math.log(d0*T/Q)/b,raw=Math.max(pu,pc),po=Math.min(raw,ce),bind=pc>pu,capped=raw>ce;
   const xmax=Math.max(300,ce*1.15,p1*1.3),inf=[],fea=[];
   for(let P=Math.ceil(c);P<=xmax;P+=2){(P<pc?inf:fea).push([P,pi(P)]);if(P<pc&&P+2>=pc)fea.push([P,pi(P)])}
   const ymax=Math.max(...inf.concat(fea).map(q=>q[1]),1)*1.15;
   chart($('c7'),760,240,{xmax,ymax,series:[{pts:inf,color:css('--mut'),dash:1},{pts:fea,color:css('--acc')}],vlines:[{x:p0,color:css('--warn'),label:'current '+f(p0)},{x:po,color:css('--hot'),label:'optimal '+f(po)}]});
-  const gain=(pi(po)-pi(p0))*T;
-  kpi($('k7'),[['Implied b',f(b,4)],['1/b + c (no stock limit)',f(pu)],['Clearance price',f(pc)],['Model optimum (raw)',f(raw)],['Optimal price (ceiling applied)',f(po)],['Profit change over horizon',(gain>=0?'+':'')+f(gain)]]);
+  const gain=pi(po)-pi(p0),so=out(po);
+  kpi($('k7'),[['Implied b',f(b,4)],['1/b + c (no stock limit)',f(pu)],['Clearance price',f(pc)],['Model optimum (raw)',f(raw)],['Optimal price (ceiling applied)',f(po)],['Sell-out at optimal price',so===null?'Lasts the horizon':`Day ${f(so)}`],['Profit change over horizon',(gain>=0?'+':'')+f(gain)]]);
   let t=po>p0*1.01?`The data say ${f(p0)} is below the optimum: raising the price to ${f(po)} ${capped?'is the most the price ceiling allows':bind?'is forced by tight stock, since at the current price the stock would sell out before the horizon ends':'maximises profit at the estimated demand slope'}.`:po<p0*0.99?`The data say ${f(p0)} is above the optimum: demand is more price sensitive than the price implies, or stock is ample, so ${f(po)} would earn more.`:`The current price ${f(p0)} is close to the optimum ${f(po)}.`;
   if(capped)t+=` The raw model optimum of ${f(raw)} is above the ceiling of ${f(ce)}, so the ceiling binds; when the test barely moves sales, b is small and 1/b is very large.`;
+  if(so!==null)t+=` Even at ${f(po)} the stock sells out around day ${f(so)} of ${T}, so the price is still in the early sell-out region.`;
   if(raw>Math.max(p0,p1)*1.3)t+=` Warning: the raw optimum is more than 30% beyond the prices actually tested (${f(Math.min(p0,p1))} to ${f(Math.max(p0,p1))}), so it is an extrapolation of the exponential demand curve and should not be trusted without testing nearer to it.`;
   $('t7').textContent=t;
 }
-['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['p0','d0','p1','d1','cst','ce','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
+/* 7 */
+const OPT=[{n:'Sealed box',p:108,u:[[7,1]],k:'box'},{n:'Sealed set (6 boxes)',p:732,u:[[7,6]],k:'set'},{n:'Confirmed set',p:618,u:[0,1,2,3,4,5].map(i=>[i,1]),k:'set'}]
+  .concat(names.map((n,i)=>({n,p:prices[i],u:[[i,1]],k:i<2?'hot':'fig'})),[{n:'Hidden',p:HID,u:[[6,1]],k:'fig'}]);
+const RES=names.concat(['Hidden','Sealed boxes']);
+function m7(){
+  const g=k=>+$(k).value,M={ep:g('ep7'),lam:g('lam7'),kap:g('kap7'),dh:g('dh7'),N:g('N7'),T:g('T7'),rho:g('rho7')/100,h:1/72};
+  const off={box:0.5,set:-1,hot:M.dh,fig:0};
+  M.be=OPT.map(o=>M.ep/o.p);M.al=OPT.map((o,j)=>M.ep+M.kap+off[o.k]);
+  M.v=prices.concat([HID,108]).map(x=>M.rho*x);
+  return M;
+}
+// fluid plan for fixed supply: dual (shadow-price) descent around the closed-form joint MNL optimum
+function solve(M,cap,T,mu,it){
+  mu=mu?mu.slice():cap.map(()=>0);
+  const av=OPT.map(o=>o.u.every(([r])=>cap[r]>1e-9));let p,s,use;
+  for(let k=0;k<=it;k++){
+    const c=OPT.map(o=>o.u.reduce((a,[r,q])=>a+q*(M.v[r]+mu[r]),0));
+    p=joint(M.al,M.be,c,av);
+    const e=OPT.map((o,j)=>av[j]?Math.exp(M.al[j]-M.be[j]*p[j]):0),D=1+e.reduce((a,x)=>a+x,0);s=e.map(x=>x/D);
+    use=cap.map(()=>0);OPT.forEach((o,j)=>o.u.forEach(([r,q])=>use[r]+=T*M.lam*q*s[j]));
+    if(k<it){const eta=60/Math.sqrt(k+1);mu=mu.map((x,r)=>cap[r]>1e-9?Math.max(0,x+eta*(use[r]-cap[r])/Math.max(cap[r],1)):0)}
+  }
+  const fr=cap.map((c,r)=>use[r]>c?c/use[r]:1),x=OPT.map((o,j)=>T*M.lam*s[j]*Math.min(...o.u.map(([r])=>fr[r])));
+  const used=cap.map(()=>0);OPT.forEach((o,j)=>o.u.forEach(([r,q])=>used[r]+=q*x[j]));
+  const rev=OPT.reduce((a,o,j)=>a+(av[j]?p[j]*x[j]:0),0)+cap.reduce((a,c,r)=>a+M.v[r]*(c-used[r]),0);
+  return {p:p.map((x,j)=>av[j]?x:NaN),x,mu,rev,cap,use};
+}
+function plan(M,st,T,o){
+  const ks=[...new Set([...Array(o.grid+1).keys()].map(i=>Math.round(st.B*i/o.grid)))],curve=[];let best=null;
+  ks.forEach(k=>{const r=solve(M,st.F.map(x=>x+k*(1-M.h)/6).concat([st.H+k*M.h,st.B-k]),T,o.mu,o.it);r.k=k;curve.push([k,r.rev]);if(!best||r.rev>best.rev)best=r});
+  best.curve=curve;return best;
+}
+const openVal=(M,mu)=>(1-M.h)*[0,1,2,3,4,5].reduce((a,i)=>a+M.v[i]+mu[i],0)/6+M.h*(M.v[6]+mu[6]);
+function s7(){
+  const M=m7();
+  [['ep7',f(M.ep,1)],['lam7',M.lam],['kap7',f(M.kap,1)],['dh7',f(M.dh,1)],['N7',M.N],['T7',M.T],['rho7',f(M.rho*100)+'%']].forEach(([k,v])=>$(k+'V').textContent=v);
+  const st={F:[0,0,0,0,0,0],H:0,B:M.N},pl=plan(M,st,M.T,{grid:24,it:1500});
+  const ys=pl.curve.map(q=>q[1]),lo=Math.min(...ys),hi=Math.max(...ys),pad=(hi-lo)*0.15+1;
+  chart($('c8'),760,220,{xmax:M.N,ymin:Math.floor(lo-pad),ymax:Math.ceil(hi+pad),series:[{pts:pl.curve,color:css('--acc')}],vlines:[{x:pl.k,color:css('--hot'),label:'open '+pl.k}]});
+  const ov=openVal(M,pl.mu),kv=M.v[7]+pl.mu[7],r0=pl.curve[0][1],rN=pl.curve[pl.curve.length-1][1];
+  kpi($('k8'),[['Boxes to open',`${pl.k} of ${M.N}`],['Planned revenue + salvage',f(pl.rev)],['vs sell sealed only',(pl.rev-r0>=0?'+':'')+f(pl.rev-r0)],['vs open everything',(pl.rev-rN>=0?'+':'')+f(pl.rev-rN)],['Shadow value: opened box',f(ov,1)],['Shadow value: sealed box',f(kv,1)]]);
+  $('t8').innerHTML='<tr><th>Option</th><th>Observed price</th><th>Planned price</th><th>Planned sales</th></tr>'+OPT.map((o,j)=>`<tr><td>${o.n}</td><td>${o.p}</td><td>${isFinite(pl.p[j])?f(pl.p[j]):'not offered'}</td><td>${f(pl.x[j],1)}</td></tr>`).join('');
+  $('t8b').innerHTML='<tr><th>Stock</th><th>Supply after opening</th><th>Planned use</th><th>Shadow price</th></tr>'+RES.map((n,r)=>`<tr><td>${n}</td><td>${f(pl.cap[r],1)}</td><td>${f(Math.min(pl.use[r],pl.cap[r]),1)}</td><td>${f(pl.mu[r],1)}</td></tr>`).join('');
+  const hotP=(pl.p[3]+pl.p[4])/2,coldP=(pl.p[5]+pl.p[6]+pl.p[7]+pl.p[8])/4;
+  $('n8').textContent=pl.k===0?`The plan sells everything sealed: at these parameters no figure is scarce enough for opening a box to beat keeping it sealed.`:`The plan opens ${pl.k} of ${M.N} boxes. Planned hot-figure price ${f(hotP)} vs cold ${f(coldP)}: with one seller and the same elasticity ε for every option, the markup over effective cost is the same, so the hot premium over cold comes from the hot figures' higher shadow price (scarcity) and their higher salvage value, not from popularity directly. ${pl.k<M.N?`At the plan, the shadow value of an opened box (${f(ov,1)}) and of a sealed box (${f(kv,1)}) are close, which is the opening rule at work: stop opening once the next box is worth more sealed.`:`Every box is opened because an opened box (${f(ov,1)}) is still worth more than a sealed one (${f(kv,1)}).`}`;
+  $('t9').innerHTML='';$('c9').innerHTML='';$('n9').textContent='Parameters changed; run the simulation to compare policies.';
+}
+function sim7(M,pol,seed){
+  const r=rng(seed),st={F:[0,0,0,0,0,0],H:0,B:M.N},path=[];let rev=0,opened=0,setDays=0,mu=null,P=null;
+  const open=k=>{for(let i=0;i<k&&st.B>0;i++){st.B--;opened++;if(r()<M.h)st.H++;else st.F[Math.floor(r()*6)]++}};
+  const stock=i=>i<6?st.F[i]:i===6?st.H:st.B;
+  for(let d=0;d<M.T;d++){
+    const left=M.T-d;
+    if(pol==='obs'){P=OPT.map(o=>o.p);let k=0;while(st.B>0&&k<12&&st.F.some(x=>x===0)){open(1);k++}}
+    else if(pol==='static'){if(d===0){const pl=plan(M,st,M.T,{grid:24,it:1500});open(pl.k);P=pl.p}}
+    else{const pl=plan(M,st,left,{grid:4,it:d?150:1500,mu});mu=pl.mu;open(pol==='gradual'?Math.ceil(pl.k/left):pl.k);P=pl.p}
+    const av=OPT.map((o,j)=>isFinite(P[j])&&o.u.every(([i,q])=>stock(i)>=q));
+    if(st.F.every(x=>x>0))setDays++;
+    const n=pois(M.lam,r);
+    for(let c=0;c<n;c++){
+      const w=OPT.map((o,j)=>av[j]&&o.u.every(([i,q])=>stock(i)>=q)?Math.exp(M.al[j]-M.be[j]*P[j]):0);
+      let u=r()*(1+w.reduce((a,x)=>a+x,0));
+      for(let j=0;j<w.length;j++){u-=w[j];if(u<0){rev+=P[j];OPT[j].u.forEach(([i,q])=>{if(i<6)st.F[i]-=q;else if(i===6)st.H-=q;else st.B-=q});break}}
+    }
+    path.push([d,P[3],P[5],P[0]]);
+  }
+  const salv=st.F.reduce((a,x,i)=>a+x*M.v[i],0)+st.H*M.v[6]+st.B*M.v[7];
+  return {rev:rev+salv,sales:rev,opened,left:st.F.reduce((a,x)=>a+x,0),sealed:st.B,setDays,path};
+}
+function run7(){
+  const M=m7(),R=20,pols=[['obs','Observed menu'],['static','Static plan'],['resolve','Re-solving'],['gradual','Re-solving, gradual opening']],out={};
+  pols.forEach(([k])=>{out[k]=[];for(let i=0;i<R;i++)out[k].push(sim7(M,k,1000+i))});
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length,sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/(a.length-1))};
+  $('t9').innerHTML='<tr><th>Policy</th><th>Revenue + salvage</th><th>± s.d.</th><th>Sales revenue</th><th>Boxes opened</th><th>Loose figures left</th><th>Sealed left</th><th>Days confirmed set possible</th></tr>'+pols.map(([k,n])=>{const a=out[k],g=x=>mean(a.map(x));return `<tr><td>${n}</td><td>${f(g(o=>o.rev))}</td><td>${f(sd(a.map(o=>o.rev)))}</td><td>${f(g(o=>o.sales))}</td><td>${f(g(o=>o.opened),1)}</td><td>${f(g(o=>o.left),1)}</td><td>${f(g(o=>o.sealed),1)}</td><td>${f(g(o=>o.setDays),1)}</td></tr>`}).join('');
+  const pa=out.resolve[0].path,ser=i=>pa.filter(q=>isFinite(q[i])).map(q=>[q[0],q[i]]),all=[1,2,3].flatMap(i=>ser(i).map(q=>q[1]));
+  chart($('c9'),760,220,{xmax:M.T,ymax:Math.max(...all,150)*1.1,series:[{pts:ser(1),color:css('--hot')},{pts:ser(2),color:css('--cold')},{pts:ser(3),color:css('--acc')}]});
+  const m=k=>mean(out[k].map(o=>o.rev)),best=pols.reduce((a,b)=>m(b[0])>m(a[0])?b:a);
+  $('n9').textContent=`Highest mean revenue + salvage: ${best[1]}. Re-solving vs observed menu: ${(m('resolve')-m('obs')>=0?'+':'')+f(m('resolve')-m('obs'))}; re-solving vs static plan: ${(m('resolve')-m('static')>=0?'+':'')+f(m('resolve')-m('static'))}; gradual vs immediate opening: ${(m('gradual')-m('resolve')>=0?'+':'')+f(m('gradual')-m('resolve'))}. Differences smaller than about two standard deviations divided by √20 are within simulation noise. Salvage values leftover stock at the salvage share, so "sales revenue" shows how much was actually sold.`;
+}
+['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['ep7','lam7','kap7','dh7','N7','T7','rho7'].forEach(i=>$(i).oninput=s7);$('run7').onclick=()=>{$('n9').textContent='Running…';setTimeout(run7,30)};['p0','d0','p1','d1','cst','ce','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc','cc2'].forEach(i=>$(i).oninput=s2);['b','c','s0','own'].forEach(i=>$(i).oninput=s3);
 ['ah','ac','qh','qc','T','fl','noise'].forEach(i=>$(i).oninput=s4);$('re').onclick=()=>{seed=Math.floor(Math.random()*1e9);s4()};
-function all(){s1();s2();s3();s4();s5();s6()}all();matchMedia('(prefers-color-scheme:dark)').onchange=all;
+function all(){s1();s2();s3();s4();s5();s6();s7()}all();matchMedia('(prefers-color-scheme:dark)').onchange=all;
 </script>
 </body>
 </html>
