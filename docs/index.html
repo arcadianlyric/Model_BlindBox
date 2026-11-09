@@ -120,7 +120,7 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 <label>Daily sales at P₀ <b id="d0V">5.0</b><input id="d0" type="range" min="1" max="20" step="0.1" value="5"></label>
 <label>Test price P₁ <b id="p1V">150</b><input id="p1" type="range" min="60" max="300" value="150"></label>
 <label>Daily sales at P₁ <b id="d1V">4.7</b><input id="d1" type="range" min="0.5" max="20" step="0.1" value="4.7"></label>
-<label>Unit cost / salvage c <b id="c6V">60</b><input id="c6" type="range" min="0" max="120" value="60"></label>
+<label>Unit cost / salvage c <b id="cstV">60</b><input id="cst" type="range" min="0" max="120" value="60"></label>
 <label>Stock left Q <b id="q6V">150</b><input id="q6" type="range" min="10" max="500" value="150"></label>
 <label>Days left T <b id="t6V">60</b><input id="t6" type="range" min="7" max="180" value="60"></label>
 </div>
@@ -236,8 +236,8 @@ function s5(){
 }
 /* 6 */
 function s6(){
-  const g=k=>+$(k).value,p0=g('p0'),d0=g('d0'),p1=g('p1'),d1=g('d1'),c=g('c6'),Q=g('q6'),T=g('t6');
-  [['p0',p0],['d0',f(d0,1)],['p1',p1],['d1',f(d1,1)],['c6',c],['q6',Q],['t6',T]].forEach(([k,v])=>$(k+'V').textContent=v);
+  const g=k=>+$(k).value,p0=g('p0'),d0=g('d0'),p1=g('p1'),d1=g('d1'),c=g('cst'),Q=g('q6'),T=g('t6');
+  [['p0',p0],['d0',f(d0,1)],['p1',p1],['d1',f(d1,1)],['cst',c],['q6',Q],['t6',T]].forEach(([k,v])=>$(k+'V').textContent=v);
   if(p1===p0||(d1-d0)/(p1-p0)>=0){kpi($('k7'),[]);$('c7').innerHTML='';$('t7').textContent='The test does not show demand falling when price rises, so b cannot be estimated. Move P₁ above P₀ and make D₁ lower than D₀ (or the reverse for a price cut).';return}
   const b=Math.log(d0/d1)/(p1-p0),D=P=>d0*Math.exp(-b*(P-p0)),pi=P=>(P-c)*D(P);
   const pu=c+1/b,pc=p0+Math.log(d0*T/Q)/b,po=Math.max(pu,pc),bind=pc>pu;
@@ -248,7 +248,7 @@ function s6(){
   kpi($('k7'),[['Implied b',f(b,4)],['1/b + c (no stock limit)',f(pu)],['Clearance price',f(pc)],['Optimal price',f(po)],['Profit change over horizon',(gain>=0?'+':'')+f(gain)]]);
   $('t7').textContent=po>p0*1.01?`The data say ${f(p0)} is below the optimum: raising the price to ${f(po)} ${bind?'is forced by tight stock, since at the current price the stock would sell out before the horizon ends':'maximises profit at the estimated demand slope'}.`:po<p0*0.99?`The data say ${f(p0)} is above the optimum: demand is more price sensitive than the price implies, or stock is ample, so ${f(po)} would earn more.`:`The current price ${f(p0)} is close to the optimum ${f(po)}.`;
 }
-['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['p0','d0','p1','d1','c6','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
+['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['p0','d0','p1','d1','cst','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
 ['ah','ac','qh','qc','T','fl','noise'].forEach(i=>$(i).oninput=s4);$('re').onclick=()=>{seed=Math.floor(Math.random()*1e9);s4()};
 function all(){s1();s2();s3();s4();s5();s6()}all();matchMedia('(prefers-color-scheme:dark)').onchange=all;
 </script>
