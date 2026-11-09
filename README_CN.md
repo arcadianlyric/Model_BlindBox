@@ -1,9 +1,9 @@
-# Model_BlindBox
+# Modeling_BlindBox
 
 ## Goal
 为一个盲盒系列建立定价模型,以收益最大化为目标,并回答三个问题:热销款为什么这个定价、库存积压时价格会怎么走、卖家的利润大约有多少. 
 
-交互页面(拖动参数查看结果):<https://arcadianlyric.github.io/Model_BlindBox/>
+交互页面(拖动参数查看结果):<https://arcadianlyric.github.io/Modeling_BlindBox/>
 
 ## Results
 
