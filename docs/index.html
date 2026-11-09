@@ -114,13 +114,14 @@ button{font:inherit;padding:4px 12px;border:1px solid var(--line);background:var
 <!-- 6 -->
 <section>
 <h2>6. Finding the optimal price from a price test</h2>
-<p class="note">Section 2 assumes the current price is optimal, which is circular. To test that assumption, you need independent demand evidence: sales at the current price and at a nearby test price. That gives the slope b = ln(D₀/D₁) / (P₁ − P₀). Daily profit is then π(P) = (P − c)·D₀·e<sup>−b(P−P₀)</sup>, maximised at P = c + 1/b, where c is the unit cost, or the salvage value if the cost is sunk. If stock is tight, the clearance price P₀ + ln(D₀T/Q)/b is a floor on the price. The sales numbers below are placeholders: replace them with your own test.</p>
+<p class="note">Section 2 assumes the current price is optimal, which is circular. To test that assumption, you need independent demand evidence: sales at the current price and at a nearby test price. That gives the slope b = ln(D₀/D₁) / (P₁ − P₀). Daily profit is then π(P) = (P − c)·D₀·e<sup>−b(P−P₀)</sup>, maximised at P = c + 1/b, where c is the unit cost, or the salvage value if the cost is sunk. If stock is tight, the clearance price P₀ + ln(D₀T/Q)/b is a floor on the price. The price is also capped at a ceiling for willingness to pay, because 1/b blows up when the test barely moves sales. The sales numbers below are placeholders: replace them with your own test.</p>
 <div class="ctl">
 <label>Current price P₀ <b id="p0V">142</b><input id="p0" type="range" min="60" max="250" value="142"></label>
 <label>Daily sales at P₀ <b id="d0V">5.0</b><input id="d0" type="range" min="1" max="20" step="0.1" value="5"></label>
 <label>Test price P₁ <b id="p1V">150</b><input id="p1" type="range" min="60" max="300" value="150"></label>
 <label>Daily sales at P₁ <b id="d1V">4.7</b><input id="d1" type="range" min="0.5" max="20" step="0.1" value="4.7"></label>
 <label>Unit cost / salvage c <b id="cstV">60</b><input id="cst" type="range" min="0" max="120" value="60"></label>
+<label>Price ceiling (max willingness to pay) <b id="ceV">200</b><input id="ce" type="range" min="100" max="500" value="200"></label>
 <label>Stock left Q <b id="q6V">150</b><input id="q6" type="range" min="10" max="500" value="150"></label>
 <label>Days left T <b id="t6V">60</b><input id="t6" type="range" min="7" max="180" value="60"></label>
 </div>
@@ -236,19 +237,24 @@ function s5(){
 }
 /* 6 */
 function s6(){
-  const g=k=>+$(k).value,p0=g('p0'),d0=g('d0'),p1=g('p1'),d1=g('d1'),c=g('cst'),Q=g('q6'),T=g('t6');
-  [['p0',p0],['d0',f(d0,1)],['p1',p1],['d1',f(d1,1)],['cst',c],['q6',Q],['t6',T]].forEach(([k,v])=>$(k+'V').textContent=v);
-  if(p1===p0||(d1-d0)/(p1-p0)>=0){kpi($('k7'),[]);$('c7').innerHTML='';$('t7').textContent='The test does not show demand falling when price rises, so b cannot be estimated. Move P₁ above P₀ and make D₁ lower than D₀ (or the reverse for a price cut).';return}
+  const g=k=>+$(k).value,p0=g('p0'),d0=g('d0'),p1=g('p1'),d1=g('d1'),c=g('cst'),Q=g('q6'),T=g('t6'),ce=g('ce');
+  [['p0',p0],['d0',f(d0,1)],['p1',p1],['d1',f(d1,1)],['cst',c],['ce',ce],['q6',Q],['t6',T]].forEach(([k,v])=>$(k+'V').textContent=v);
+  if(p1===p0||(d1-d0)/(p1-p0)>=0){kpi($('k7'),[]);$('c7').innerHTML='';$('c7').style.display='none';$('t7').textContent=p1===p0?'P₁ equals P₀, so there is no price variation to estimate b from.':`Sales moved from ${f(d0,1)} to ${f(d1,1)} per day while price moved from ${f(p0)} to ${f(p1)}, so demand does not fall as price rises and b cannot be estimated (the exponential model needs b > 0). In real data this usually means noise, a promotion, a stock-out or a shift in demand between the two periods; repeat the test over a longer window.`;return}
+  $('c7').style.display='';
   const b=Math.log(d0/d1)/(p1-p0),D=P=>d0*Math.exp(-b*(P-p0)),pi=P=>(P-c)*D(P);
-  const pu=c+1/b,pc=p0+Math.log(d0*T/Q)/b,po=Math.max(pu,pc),bind=pc>pu;
-  const xmax=Math.max(300,po*1.3),inf=[],fea=[];for(let P=Math.ceil(c);P<=xmax;P+=2){(P<pc?inf:fea).push([P,pi(P)]);if(P<pc&&P+2>=pc)fea.push([P,pi(P)])}
-  const ymax=Math.max(pi(pu),pi(po),pi(p0),1)*1.15;
+  const pu=c+1/b,pc=p0+Math.log(d0*T/Q)/b,raw=Math.max(pu,pc),po=Math.min(raw,ce),bind=pc>pu,capped=raw>ce;
+  const xmax=Math.max(300,ce*1.15,p1*1.3),inf=[],fea=[];
+  for(let P=Math.ceil(c);P<=xmax;P+=2){(P<pc?inf:fea).push([P,pi(P)]);if(P<pc&&P+2>=pc)fea.push([P,pi(P)])}
+  const ymax=Math.max(...inf.concat(fea).map(q=>q[1]),1)*1.15;
   chart($('c7'),760,240,{xmax,ymax,series:[{pts:inf,color:css('--mut'),dash:1},{pts:fea,color:css('--acc')}],vlines:[{x:p0,color:css('--warn'),label:'current '+f(p0)},{x:po,color:css('--hot'),label:'optimal '+f(po)}]});
   const gain=(pi(po)-pi(p0))*T;
-  kpi($('k7'),[['Implied b',f(b,4)],['1/b + c (no stock limit)',f(pu)],['Clearance price',f(pc)],['Optimal price',f(po)],['Profit change over horizon',(gain>=0?'+':'')+f(gain)]]);
-  $('t7').textContent=po>p0*1.01?`The data say ${f(p0)} is below the optimum: raising the price to ${f(po)} ${bind?'is forced by tight stock, since at the current price the stock would sell out before the horizon ends':'maximises profit at the estimated demand slope'}.`:po<p0*0.99?`The data say ${f(p0)} is above the optimum: demand is more price sensitive than the price implies, or stock is ample, so ${f(po)} would earn more.`:`The current price ${f(p0)} is close to the optimum ${f(po)}.`;
+  kpi($('k7'),[['Implied b',f(b,4)],['1/b + c (no stock limit)',f(pu)],['Clearance price',f(pc)],['Model optimum (raw)',f(raw)],['Optimal price (ceiling applied)',f(po)],['Profit change over horizon',(gain>=0?'+':'')+f(gain)]]);
+  let t=po>p0*1.01?`The data say ${f(p0)} is below the optimum: raising the price to ${f(po)} ${capped?'is the most the price ceiling allows':bind?'is forced by tight stock, since at the current price the stock would sell out before the horizon ends':'maximises profit at the estimated demand slope'}.`:po<p0*0.99?`The data say ${f(p0)} is above the optimum: demand is more price sensitive than the price implies, or stock is ample, so ${f(po)} would earn more.`:`The current price ${f(p0)} is close to the optimum ${f(po)}.`;
+  if(capped)t+=` The raw model optimum of ${f(raw)} is above the ceiling of ${f(ce)}, so the ceiling binds; when the test barely moves sales, b is small and 1/b is very large.`;
+  if(raw>Math.max(p0,p1)*1.3)t+=` Warning: the raw optimum is more than 30% beyond the prices actually tested (${f(Math.min(p0,p1))} to ${f(Math.max(p0,p1))}), so it is an extrapolation of the exponential demand curve and should not be trusted without testing nearer to it.`;
+  $('t7').textContent=t;
 }
-['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['p0','d0','p1','d1','cst','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
+['d','fe','sh','st','rs'].forEach(i=>$(i).oninput=s5);['p0','d0','p1','d1','cst','ce','q6','t6'].forEach(i=>$(i).oninput=s6);['n','bp'].forEach(i=>$(i).oninput=s1);['ph','pc'].forEach(i=>$(i).oninput=s2);['b','c','s0'].forEach(i=>$(i).oninput=s3);
 ['ah','ac','qh','qc','T','fl','noise'].forEach(i=>$(i).oninput=s4);$('re').onclick=()=>{seed=Math.floor(Math.random()*1e9);s4()};
 function all(){s1();s2();s3();s4();s5();s6()}all();matchMedia('(prefers-color-scheme:dark)').onchange=all;
 </script>
